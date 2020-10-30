@@ -1,1 +1,32 @@
-test
+environments:
+  - name: Dev
+    provisioner: gcp
+    iacPolicy: "CC default latest"
+    iacRoot: "terraform"
+
+pipelines:
+  zephyr-demo-deploy:
+    - npm-build@1
+    - bash@1
+
+applications:
+  zpdemo:
+    displayName: "Zephyr Demp"
+    srcRoot: "."
+    pipeline: zephyr-demo-deploy
+
+deployments:
+  dev:
+    endpoints:
+      - zpdemo
+    environment:
+      name: Dev
+    applications:
+      zpdemo:
+        env:
+          ID: ${terraform.bucket.value.id}
+        pipelineInputs:
+          bash_script: "gsutil cp -R dist/* gs://$$ID"
+    output:
+      app-endpoint:
+        command: echo https://storage.googleapis.com/$$ID/output.html
